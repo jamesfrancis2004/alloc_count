@@ -45,6 +45,12 @@ std::thread_local! {
     static IN_ALLOC: Cell<bool> = const { Cell::new(false) };
 }
 
+#[cfg(feature = "tokio")]
+tokio::task_local! {
+    #[doc(hidden)]
+    pub static ASYNC_ALLOC_STATS: Cell<AllocStats>;
+}
+
 /// A generic, thread-local allocation counter wrapper around a standard `GlobalAlloc`.
 /// It intercepts allocation calls, tallies them per-thread, and forwards them to the underlying allocator.
 pub struct AllocCounter<A = std::alloc::System>(pub A);
@@ -60,6 +66,15 @@ unsafe impl<A> GlobalAlloc for AllocCounter<A> where A: GlobalAlloc {
                     current.bytes_allocated += layout.size();
                     stats.set(current);
                 });
+                
+                #[cfg(feature = "tokio")]
+                let _ = ASYNC_ALLOC_STATS.try_with(|stats| {
+                    let mut current = stats.get();
+                    current.alloc_calls += 1;
+                    current.bytes_allocated += layout.size();
+                    stats.set(current);
+                });
+                
                 in_alloc.set(false);
             }
         });
@@ -76,6 +91,15 @@ unsafe impl<A> GlobalAlloc for AllocCounter<A> where A: GlobalAlloc {
                     current.bytes_deallocated += layout.size();
                     stats.set(current);
                 });
+                
+                #[cfg(feature = "tokio")]
+                let _ = ASYNC_ALLOC_STATS.try_with(|stats| {
+                    let mut current = stats.get();
+                    current.dealloc_calls += 1;
+                    current.bytes_deallocated += layout.size();
+                    stats.set(current);
+                });
+
                 in_alloc.set(false);
             }
         });
@@ -92,6 +116,15 @@ unsafe impl<A> GlobalAlloc for AllocCounter<A> where A: GlobalAlloc {
                     current.bytes_allocated += layout.size();
                     stats.set(current);
                 });
+                
+                #[cfg(feature = "tokio")]
+                let _ = ASYNC_ALLOC_STATS.try_with(|stats| {
+                    let mut current = stats.get();
+                    current.alloc_calls += 1;
+                    current.bytes_allocated += layout.size();
+                    stats.set(current);
+                });
+
                 in_alloc.set(false);
             }
         });
@@ -108,6 +141,15 @@ unsafe impl<A> GlobalAlloc for AllocCounter<A> where A: GlobalAlloc {
                     current.bytes_reallocated += new_size;
                     stats.set(current);
                 });
+                
+                #[cfg(feature = "tokio")]
+                let _ = ASYNC_ALLOC_STATS.try_with(|stats| {
+                    let mut current = stats.get();
+                    current.realloc_calls += 1;
+                    current.bytes_reallocated += new_size;
+                    stats.set(current);
+                });
+
                 in_alloc.set(false);
             }
         });
