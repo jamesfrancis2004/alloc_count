@@ -2,5 +2,11 @@
 name = "alloc_count"
 version = "0.1.0"
 edition = "2021"
+description = "A lightweight tool to count allocations within a specific scope using a custom global allocator."
+license = "MIT OR Apache-2.0"
+keywords = ["allocator", "profiling", "memory", "testing"]
+categories = ["development-tools::profiling", "memory-management"]
+repository = "https://github.com/jamesfrancis2004/alloc_count"
+
 
 [dependencies]
