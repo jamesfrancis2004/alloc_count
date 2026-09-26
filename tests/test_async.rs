@@ -59,3 +59,26 @@ async fn test_async_spawning_wrapped() {
     assert_eq!(res.0.alloc_calls, 1);
     assert_eq!(res.1, vec![3]);
 }
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+async fn test_async_ignore() {
+    use alloc_count::alloc_ignore;
+
+    let (stats, res) = alloc_count_tokio!(async {
+        let v = vec![1, 2, 3];
+        tokio::task::yield_now().await;
+        let ignored_val = alloc_ignore!({
+            let mut s = Vec::new();
+            for i in 0..100 {
+                s.push(i);
+            }
+            42
+        });
+        (v, ignored_val)
+    }).await;
+
+    // Only vec![1, 2, 3] was tracked
+    assert_eq!(stats.alloc_calls, 1);
+    assert_eq!(res.0, vec![1, 2, 3]);
+    assert_eq!(res.1, 42);
+}

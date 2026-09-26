@@ -1,5 +1,5 @@
 /// Measures the total allocation statistics that occurred exclusively on the calling thread
-/// during the execution of the provided block.
+/// during the execution of the provided expression or block.
 ///
 /// Returns a tuple `(alloc_stats, block_result)`, allowing the user to deeply inspect
 /// memory metrics (allocations, deallocations, bytes requested) dynamically.
@@ -21,9 +21,9 @@
 /// ```
 #[macro_export]
 macro_rules! alloc_count {
-    ($b:block) => {{
+    ($e:expr) => {{
         let __start = $crate::stats();
-        let __res = { $b };
+        let __res = $e;
         let __end = $crate::stats();
         (__end.saturating_sub(__start), __res)
     }};
@@ -66,3 +66,39 @@ macro_rules! alloc_count_tokio {
         )
     };
 }
+
+/// Temporarily ignores any memory allocations, deallocations, or reallocations
+/// performed during the execution of the provided expression or block.
+///
+/// Any memory operations within the expression will not be recorded in either
+/// thread-local or task-local allocation statistics.
+///
+/// # Example
+/// ```rust
+/// use std::alloc::System;
+/// use alloc_count::{alloc_count, alloc_ignore, AllocCounter};
+///
+/// #[global_allocator]
+/// static GLOBAL: AllocCounter<System> = AllocCounter(System);
+///
+/// let (stats, _) = alloc_count!({
+///     let _v = vec![1, 2, 3];
+///     // Can be used on single expressions:
+///     alloc_ignore!(println!("Debugging: {:?}", _v));
+///     // Or on blocks:
+///     alloc_ignore!({
+///         let _s = format!("hello {}", 42);
+///     });
+/// });
+/// assert_eq!(stats.alloc_calls, 1);
+/// ```
+#[macro_export]
+macro_rules! alloc_ignore {
+    ($e:expr) => {{
+        let _guard = $crate::IgnoreGuard::new();
+        $e
+    }};
+}
+
+
+

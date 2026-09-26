@@ -1,6 +1,6 @@
 [package]
 name = "alloc_count"
-version = "0.3.1"
+version = "0.3.2"
 edition = "2021"
 description = "A lightweight tool to count allocations within a specific scope using a custom global allocator."
 license = "MIT OR Apache-2.0"
@@ -17,3 +17,11 @@ tokio = { version = "1.0", features = ["rt", "macros"], optional = true }
 
 [dev-dependencies]
 tokio = { version = "1.0", features = ["rt-multi-thread", "macros"] }
+
+[[example]]
+name = "async"
+required-features = ["tokio"]
+
+[[test]]
+name = "test_async"
+required-features = ["tokio"]

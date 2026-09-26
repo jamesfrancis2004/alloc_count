@@ -26,6 +26,37 @@ fn main() {
 }
 ```
 
+Expressions can also be measured directly without braces:
+```rust
+let (stats, boxed) = alloc_count!(Box::new(42));
+```
+
+## Ignoring Allocations (e.g. Logging / Setup)
+
+Sometimes you want to format strings, print debug output, or run setup logic inside a profiled section without polluting your allocation counts. You can use the `alloc_ignore!` macro:
+
+```rust
+use alloc_count::{alloc_count, alloc_ignore};
+
+let (stats, result) = alloc_count!({
+    let v = vec![1, 2, 3];
+
+    // Single expressions or logging:
+    alloc_ignore!(println!("Debugging output: {v:?}"));
+
+    // Or multi-line blocks:
+    alloc_ignore!({
+        let _setup = format!("temporary setup string {}", 42);
+    });
+
+    v
+});
+
+assert_eq!(stats.alloc_calls, 1);
+```
+
+You can also use it namespaced directly as `alloc_count::alloc_ignore!(...)` without importing it.
+
 ## Async (Tokio) Support
 
 If you need to trace memory allocations across `.await` points and multiple worker threads, you can enable the `tokio` feature flag:
